@@ -92,47 +92,58 @@ void exec() {
 			case OR: { 
 				int r1 = memory[pc++]; 
 				int r2 = memory[pc++]; 
-				reg[AX] = r1 || r2; break; 
+				reg[AX] = reg[r1] | reg[r2]; break; 
 			}
 			case AND: {
                                 int r1 = memory[pc++];
                                 int r2 = memory[pc++];
-                                reg[AX] = r1 && r2; break;
+                                reg[AX] = reg[r1] & reg[r2]; break;
                         }
 			case NOT: {
                                 int r1 = memory[pc++];
-                                reg[AX] = !r1; break;
+                                reg[AX] = ~reg[r1]; break;
                         }
 			case XOR: {
                                 int r1 = memory[pc++];
                                 int r2 = memory[pc++];
-                                reg[AX] = r1 ^ r2; break;
+                                reg[AX] = reg[r1] ^ reg[r2]; break;
                         }
 			case SHR: {
                                 int r1 = memory[pc++];
                                 int r2 = memory[pc++];
-                                reg[AX] = r1 >> r2; break;
+                                reg[AX] = reg[r1] >> reg[r2]; break;
                         }
 			case SHL: {
                                 int r1 = memory[pc++];
                                 int r2 = memory[pc++];
-                                reg[AX] = r1 << r2; break;
+                                reg[AX] = reg[r1] << reg[r2]; break;
                         }
 			case INC: {
                                 int r1 = memory[pc++];
-                                reg[AX] = r1++; break;
+                                reg[r1]++; 
+				break;
                         }
 			case DEC: {
                                 int r1 = memory[pc++];
-                                reg[AX] = r1--; break;
+                                reg[r1]--; 
+				break;
                         }
 			case PUSH: {
 				int r = memory[pc++];
 				(r != SR) ? error(1) : 0;
 				int val = memory[pc++];
-				for(int i = 0; i < 256; i++) {
-					if((sr[i] != 0) && !(c <= sc)) {sr[i] = val sc++;}
-				}
+				(sc >= 256) ? sr[sc++] = val : error(6);
+				break;
+			}
+			case POP: {
+                                int r = memory[pc++];
+                                (r != SR) ? error(1) : 0;
+                                (sc != 0) ? sr[sc--] = 0 : error(7);
+                                break;
+                        }
+			case RSR: {
+				for(int i = 0; i < 256; i++) sr[i] = 0;
+				sc = 0;
 				break;
 			}
 			case INT: { int code = memory[pc++]; bios(code); break; }
@@ -149,11 +160,11 @@ int main()
     check();
     reg[AL] = 92;
     printf("Hello world: %d\n", memory[0]);
-    uint16_t prog[] = { LOAD, AL, 1, LOAD, AH, 1, ADD, AH, AL, INT, 0xFF, HALT };
+    uint16_t prog[] = { LOAD, AL, 1, LOAD, AH, 1, ADD, AH, AL, INT, 0xFF,PUSH, SR, 2, HALT };
     int sprog = sizeof(prog) / sizeof(uint16_t);
     check();
     for(int i = 0; i < sprog; i++) memory[i] = prog[i];
     exec();
-    printf("%c\n", reg[AH]);
+    printf("%d\n", sr[1]);
     return 0;
 }
